@@ -1,0 +1,223 @@
+[project]
+name = "ruff-tutor-mcp"
+version = "0.1.0"
+description = "MCP server for learning Python best practices through Ruff violations"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "daiki.tsutsui", email = "tsutsumi.aie@gmail.com" }]
+requires-python = ">=3.11"
+keywords = ["mcp", "ruff", "linter", "python", "education", "claude"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+  "pydantic >= 2.0.0",
+  "loguru >= 0.7.0",
+  "mcp >= 1.0.0",
+]
+
+[project.scripts]
+ruff-tutor-mcp = "ruff_tutor_mcp.main:main"
+
+[dependency-groups]
+dev = [
+  "pytest >= 8.3.4, < 8.4",
+  "pytest-cov ~= 2.12.0",
+  "pytest-mock ~= 3.8.2",
+  "pytest-mypy ~= 0.10.3",
+  "pytest-asyncio ~= 0.21.0",
+  "types-requests ~= 2.28.9",
+  "types-pyyaml ~= 6.0.12.8",
+  "types-toml ~= 0.10.8.5",
+  "ruff >= 0.6.4",
+  "tox >= 4.22",
+  "moto ~= 4.2.14",
+  "pytest-httpx ~= 0.35.0",
+  "types-setuptools>=75.8.0.20250110",
+  "types-cachetools>=5.5.0.20240820",
+  "pytest-xdist>=3.6.1",
+  "pytest-clarity>=1.0.1",
+  "mypy>=1.7.1",
+]
+experiments = [
+  "japanize-matplotlib >= 1.1.3",
+  "progressbar2 >= 4.5.0",
+  "pytablewriter >= 0.64.2",
+  "matplotlib >= 3.9.3",
+  "seaborn >= 0.11.2",
+  "jupyter >= 1.1.1",
+  "jupyterlab >= 3.6.8",
+  "jupyter-contrib-nbextensions >= 0.5.1",
+  "jupyter-nbextensions-configurator >= 0.4.1",
+  "jupyterthemes >= 0.20.0",
+  "jupyterlab-spreadsheet-editor >= 0.6.1",
+  "requests >= 2.32.3",
+  "tqdm >= 4.67.1",
+  "flatdict >= 4.0.1",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 119
+indent-width = 4
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".ipynb_checkpoints",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pyenv",
+  ".pytest_cache",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  ".vscode",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "site-packages",
+  "venv",
+]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105",
+  "D106",
+  "D107",
+  "D203",
+  "D213",
+  "D400",
+  "D415",
+  "G004",
+  "Q000",
+  "Q003",
+  "S101",
+  "EM101",
+  "EM102",
+  "TD002",
+  "TD003",
+  "COM812",
+  "FBT001",
+  "FBT002",
+  "FIX002",
+  "RUF001",
+  "TC001",
+  "TID252",
+  "TRY003",
+]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.isort]
+section-order = [
+  "future",
+  "standard-library",
+  "third-party",
+  "first-party",
+  "local-folder",
+]
+split-on-trailing-comma = true
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.12"
+files = "src"
+ignore_missing_imports = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+allow_redefinition = false
+show_error_codes = true
+pretty = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.tox]
+requires = ["tox>=4.19"]
+env_list = ["py312", "py313", "lint"]
+
+[tool.tox.env_run_base]
+description = "Run tests"
+allowlist_externals = ["pytest"]
+skip_install = true
+set_env = { PYTHONPATH = "src" }
+commands = [
+  [
+    "pytest",
+    "--ignore=tests/local",
+    "--cov=src/ruff-tutor-mcp",
+    "--cov-branch",
+    "--cov-report",
+    "term-missing:skip-covered",
+  ],
+]
+
+[tool.tox.env.lint]
+description = "Lint and Type"
+allowlist_externals = ["ruff", "mypy"]
+skip_install = true
+commands = [
+  [
+    "ruff",
+    "check",
+    "src/",
+    "tests/",
+    { replace = "posargs", default = [
+    ], extend = true },
+  ],
+  [
+    "ruff",
+    "format",
+    "--check",
+    "src/",
+    "tests/",
+    "scripts/",
+  ],
+  [
+    "mypy",
+    "src/",
+    "tests/",
+    { replace = "posargs", default = [
+    ], extend = true },
+  ],
+]
+
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ruff_tutor_mcp"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
