@@ -4,6 +4,7 @@ data/*
 # claude code
 CLAUDE.md
 .claude/*
+.unknowns/
 
 # === OS固有のファイル ===
 # macOS
