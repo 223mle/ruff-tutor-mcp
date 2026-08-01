@@ -6,6 +6,9 @@ For each rule group in `groups`:
   readability/maintainability/correctness, and the relevant Python principle or PEP.
 - Call `explain_rule(code)` only for rules worth teaching in depth (unfamiliar or non-trivial ones);
   its `explanation` contains the full rationale and examples. Do not call it for every rule.
+`file` values are relative to the `path` passed to `review_code`.
+A `fix_applicability` of "unsafe" means the suggested fix may change program behavior
+(ruff itself only applies such fixes with --unsafe-fixes) - review it before applying or endorsing it.
 Respond in the same language as the user's last message.
 """.strip()
 

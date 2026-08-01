@@ -58,6 +58,8 @@ class ViolationDetail(BaseModel):
     before: str
     after: str | None = None
     fixable: bool = False
+    # ruff's fix applicability ("safe" / "unsafe" / ...); unsafe fixes may change behavior
+    fix_applicability: str | None = None
 
 
 class ViolationGroup(BaseModel):

@@ -5,6 +5,7 @@ import subprocess
 from typing import Any
 
 from loguru import logger
+from pydantic import ValidationError
 from ruff.__main__ import find_ruff_bin
 
 from ruff_tutor_mcp.models import FixEdit, RuffFix, RuffViolation, RuleDoc
@@ -54,7 +55,7 @@ class RuffRunner:
                 fix_availability=raw.get('fix_availability', ''),
                 url=f'{RUFF_DOCS_BASE}/{name}/' if name else None,
             )
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, AttributeError, ValidationError):
             logger.warning(f'Failed to fetch rule documentation for {code}: {result.stderr.strip()}')
             doc = None
 
@@ -67,7 +68,9 @@ class RuffRunner:
         return subprocess.run(  # noqa: S603
             command,
             capture_output=True,
-            text=True,
+            # ruff always emits UTF-8; never decode with the platform locale
+            encoding='utf-8',
+            errors='replace',
             check=False,
         )
 

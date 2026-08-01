@@ -36,7 +36,7 @@ class Session:
     mode: str
     max_retry: int
     initial: Counter[Fingerprint]
-    refs: dict[Fingerprint, ViolationRef]
+    refs: dict[Fingerprint, list[ViolationRef]]
     attempts: int = 0
     last_fixed: int = 0
     last_remaining: int = 0
@@ -45,7 +45,7 @@ class Session:
         """Fold newly appeared violations into the baseline so later checks treat them as remaining."""
         for item in tracked:
             self.initial[item.fingerprint] += 1
-            self.refs.setdefault(item.fingerprint, item.ref)
+            self.refs.setdefault(item.fingerprint, []).append(item.ref)
 
     @property
     def rules_covered(self) -> list[str]:
@@ -54,19 +54,22 @@ class Session:
 
 @dataclass
 class SessionStore:
-    """In-memory session store with FIFO eviction."""
+    """In-memory session store with least-recently-used eviction."""
 
     max_sessions: int = MAX_SESSIONS
     _sessions: OrderedDict[str, Session] = field(default_factory=OrderedDict)
 
     def create(self, path: str, mode: str, max_retry: int, tracked: list[TrackedViolation]) -> Session:
+        refs: dict[Fingerprint, list[ViolationRef]] = {}
+        for item in tracked:
+            refs.setdefault(item.fingerprint, []).append(item.ref)
         session = Session(
             id=uuid.uuid4().hex[:8],
             path=path,
             mode=mode,
             max_retry=max_retry,
             initial=Counter(item.fingerprint for item in tracked),
-            refs={item.fingerprint: item.ref for item in tracked},
+            refs=refs,
             last_remaining=len(tracked),
         )
         self._sessions[session.id] = session
@@ -76,7 +79,11 @@ class SessionStore:
         return session
 
     def get(self, session_id: str) -> Session | None:
-        return self._sessions.get(session_id)
+        session = self._sessions.get(session_id)
+        if session is not None:
+            # refresh recency so an actively used session is not the next evicted
+            self._sessions.move_to_end(session_id)
+        return session
 
     def remove(self, session_id: str) -> Session | None:
         return self._sessions.pop(session_id, None)
@@ -84,7 +91,7 @@ class SessionStore:
 
 def split_progress(
     initial: Counter[Fingerprint],
-    refs: dict[Fingerprint, ViolationRef],
+    refs: dict[Fingerprint, list[ViolationRef]],
     current: list[Fingerprint],
 ) -> tuple[list[ViolationRef], list[bool]]:
     """Partition current violations against the session baseline.
@@ -105,8 +112,14 @@ def split_progress(
 
     fixed: list[ViolationRef] = []
     for fingerprint, count in budget.items():
-        ref = refs.get(fingerprint)
-        if ref is not None and count > 0:
-            fixed.extend([ref] * count)
+        if count <= 0:
+            continue
+        candidates = refs.get(fingerprint, [])
+        if not candidates:
+            continue
+        # which of several identical occurrences was fixed is unknowable;
+        # report distinct refs up to the fixed count, padding with the last one
+        fixed.extend(candidates[:count])
+        fixed.extend([candidates[-1]] * (count - len(candidates)))
 
     return fixed, remaining_flags
