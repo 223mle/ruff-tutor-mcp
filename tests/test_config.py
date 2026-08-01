@@ -39,7 +39,7 @@ class TestTutorConfig:
     def test_default_config(self) -> None:
         """Verify that default configuration is correct."""
         config = TutorConfig.default()
-        assert config.mode == TutorMode.BEGINNER
+        assert config.mode == TutorMode.AUTO
         assert config.max_retry == DEFAULT_MAX_RETRY
 
     def test_custom_config(self) -> None:
@@ -62,7 +62,7 @@ class TestLoadConfig:
     def test_load_default_without_file(self, tmp_path: Path) -> None:
         """Verify that default config is returned when no config file exists."""
         config = load_config(tmp_path)
-        assert config.mode == TutorMode.BEGINNER
+        assert config.mode == TutorMode.AUTO
         assert config.max_retry == DEFAULT_MAX_RETRY
 
     def test_load_from_file(self, tmp_path: Path) -> None:
@@ -85,7 +85,7 @@ class TestLoadConfig:
     def test_invalid_mode_override_ignored(self, tmp_path: Path) -> None:
         """Verify that invalid mode_override is ignored."""
         config = load_config(tmp_path, mode_override='invalid')
-        assert config.mode == TutorMode.BEGINNER
+        assert config.mode == TutorMode.AUTO
 
     def test_find_config_in_parent_dir(self, tmp_path: Path) -> None:
         """Verify that config file in parent directory is found."""
@@ -104,4 +104,4 @@ class TestLoadConfig:
         config_file.write_text('invalid toml content {{{{')
 
         config = load_config(tmp_path)
-        assert config.mode == TutorMode.BEGINNER
+        assert config.mode == TutorMode.AUTO
