@@ -129,6 +129,7 @@ def _build_groups(items: list[_Inspected], include_fixes: bool) -> list[Violatio
                         before=item.before,
                         after=item.after if include_fixes else None,
                         fixable=item.after is not None,
+                        fix_applicability=item.violation.fix.applicability if item.violation.fix else None,
                     )
                     for item in members
                 ],
@@ -218,6 +219,8 @@ def check_my_fix(session_id: str) -> Progress:
             instruction=instructions.ERROR,
         )
 
+    session.attempts += 1
+
     if not items:
         fixed, _ = split_progress(session.initial, session.refs, [])
         session.last_fixed = len(fixed)
@@ -239,7 +242,6 @@ def check_my_fix(session_id: str) -> Progress:
     remaining_items = [item for item, is_old in zip(items, remaining_flags, strict=True) if is_old]
     new_items = [item for item, is_old in zip(items, remaining_flags, strict=True) if not is_old]
 
-    session.attempts += 1
     session.last_fixed = len(fixed)
     session.last_remaining = len(remaining_items) + len(new_items)
     session.track_new([TrackedViolation(fingerprint=item.fingerprint, ref=item.ref) for item in new_items])

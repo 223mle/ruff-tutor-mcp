@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 def source_line(source: str, row: int) -> str:
     """Return the text of the given 1-based line, or '' when out of range."""
-    return _line_at(source.replace('\r\n', '\n').splitlines(), row)
+    return _line_at(_normalize(source).split('\n'), row)
 
 
 def render_fix(source: str, violation: RuffViolation) -> tuple[str, str | None]:
@@ -18,8 +18,8 @@ def render_fix(source: str, violation: RuffViolation) -> tuple[str, str | None]:
     The snippets cover the full lines spanned by the edits, so multi-line
     fixes and line deletions render correctly.
     """
-    source = source.replace('\r\n', '\n')
-    lines = source.splitlines()
+    source = _normalize(source)
+    lines = source.split('\n')
 
     if violation.fix is None or not violation.fix.edits:
         return _line_at(lines, violation.row), None
@@ -30,11 +30,21 @@ def render_fix(source: str, violation: RuffViolation) -> tuple[str, str | None]:
 
     before = '\n'.join(lines[start_row - 1 : end_row])
 
-    new_lines = _apply_edits(source, edits).splitlines()
+    new_lines = _apply_edits(source, edits).split('\n')
     delta = len(new_lines) - len(lines)
     after = '\n'.join(new_lines[start_row - 1 : end_row + delta])
 
     return before, after
+
+
+def _normalize(source: str) -> str:
+    r"""Normalize line endings to '\n' so ruff's row/col coordinates map cleanly.
+
+    Lines are always derived via split('\n') (never str.splitlines, which also
+    splits on characters ruff does not treat as line breaks, e.g. form feed)
+    so that line indexing stays consistent with `_line_starts`.
+    """
+    return source.replace('\r\n', '\n').replace('\r', '\n')
 
 
 def _line_at(lines: list[str], row: int) -> str:

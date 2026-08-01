@@ -23,7 +23,9 @@ class TutorConfig(BaseModel):
     """Model representing ruff_tutor configuration."""
 
     mode: TutorMode = Field(default=TutorMode.AUTO, description='Learning mode')
-    max_retry: int = Field(default=2, ge=1, le=10, description='Maximum retry count in advanced mode')
+    max_retry: int = Field(
+        default=2, ge=1, le=10, description='Maximum attempts in learning sessions (beginner/advanced)'
+    )
 
     @classmethod
     def default(cls) -> TutorConfig:

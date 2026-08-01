@@ -35,7 +35,7 @@ class TestSplitProgress:
         initial = _counter(items)
         fixed, flags = split_progress(
             initial=initial,
-            refs={t.fingerprint: t.ref for t in items},
+            refs={t.fingerprint: [t.ref] for t in items},
             current=[],
         )
         assert len(fixed) == 1
@@ -48,7 +48,7 @@ class TestSplitProgress:
         new = tracked('a.py', 'F821', 'y = undefined')
         fixed, flags = split_progress(
             initial=_counter([old]),
-            refs={old.fingerprint: old.ref},
+            refs={old.fingerprint: [old.ref]},
             current=[old.fingerprint, new.fingerprint],
         )
         assert fixed == []
@@ -59,7 +59,7 @@ class TestSplitProgress:
         item = tracked('a.py', 'E712', 'if x == True:')
         fixed, flags = split_progress(
             initial=_counter([item, item]),
-            refs={item.fingerprint: item.ref},
+            refs={item.fingerprint: [item.ref, item.ref]},
             current=[item.fingerprint],
         )
         assert len(fixed) == 1
@@ -97,7 +97,7 @@ class TestSessionStore:
         new = tracked('a.py', 'F821', 'y = undefined')
         session.track_new([new])
         assert session.initial[new.fingerprint] == 1
-        assert session.refs[new.fingerprint] == new.ref
+        assert session.refs[new.fingerprint] == [new.ref]
         assert session.rules_covered == ['F821']
 
 
